@@ -1,6 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { categories, comparisons, site, tools } from './data.js'
+import { premiumStyles } from './styles.js'
 
 const outDir = 'dist'
 const toolBySlug = new Map(tools.map((tool) => [tool.slug, tool]))
@@ -245,7 +246,7 @@ const build = async () => {
   routes.length = 0
   await rm(outDir, { force: true, recursive: true })
   await mkdir(outDir, { recursive: true })
-  await writeFile(join(outDir, 'styles.css'), styles)
+  await writeFile(join(outDir, 'styles.css'), premiumStyles)
 
   await writePage('/', homePage())
   await writePage('/tools/', toolsPage())
