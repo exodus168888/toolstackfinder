@@ -1,0 +1,320 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { categories, comparisons, site, tools } from './data.js'
+
+const outDir = 'dist'
+const toolBySlug = new Map(tools.map((tool) => [tool.slug, tool]))
+const routes = []
+
+const escapeHtml = (value) =>
+  String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+
+const money = (value) =>
+  new Intl.NumberFormat('en-US', { currency: 'USD', style: 'currency' }).format(
+    value,
+  )
+
+const page = ({ content, description = site.description, path, title }) => {
+  const canonical = `${site.domain}${path}`
+  routes.push(path)
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="${escapeHtml(description)}" />
+    <link rel="canonical" href="${canonical}" />
+    <link rel="stylesheet" href="/styles.css" />
+    <meta property="og:site_name" content="${site.name}" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:url" content="${canonical}" />
+    <title>${escapeHtml(title)}</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"><span>TS</span>${site.name}</a>
+      <nav>
+        <a href="/tool-finder/">Finder</a>
+        <a href="/tools/">Tools</a>
+        <a href="/categories/email-marketing/">Categories</a>
+        <a href="/compare/mailerlite-vs-brevo/">Compare</a>
+        <a href="/affiliate-disclosure/">Disclosure</a>
+      </nav>
+    </header>
+    <main>${content}</main>
+    <footer class="footer">
+      <div>
+        <strong>${site.name}</strong>
+        <p>Software stack recommendations for freelancers and small businesses.</p>
+      </div>
+      <nav>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/affiliate-disclosure/">Affiliate disclosure</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+    </footer>
+  </body>
+</html>`
+}
+
+const card = (tool) => `<article class="tool-card">
+  <div>
+    <span>${categoryTitle(tool.category)}</span>
+    <h3>${tool.name}</h3>
+    <p>${tool.description}</p>
+  </div>
+  <ul>${tool.features.map((feature) => `<li>${feature}</li>`).join('')}</ul>
+  <a href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit website</a>
+</article>`
+
+const categoryTitle = (slug) =>
+  categories.find((category) => category.slug === slug)?.title ?? slug
+
+const hero = (title, description, action = '') => `<section class="hero">
+  <div>
+    <h1>${title}</h1>
+    <p>${description}</p>
+    ${action}
+  </div>
+  <aside class="finder-panel">
+    <span>Recommendation model</span>
+    <strong>Use case + budget + business type</strong>
+    <p>Start with practical fit, then compare pricing, workflow match, and switching cost.</p>
+  </aside>
+</section>`
+
+const grid = (items) => `<div class="grid">${items.join('')}</div>`
+
+const writePage = async (path, html) => {
+  const file = path === '/' ? 'index.html' : `${path.replace(/^\/|\/$/g, '')}/index.html`
+  const target = join(outDir, file)
+  await mkdir(dirname(target), { recursive: true })
+  await writeFile(target, html)
+}
+
+const homePage = () =>
+  page({
+    path: '/',
+    title: 'ToolStackFinder - Find Your Small Business Software Stack',
+    description:
+      'Find practical SaaS tools for email marketing, CRM, accounting, SEO, scheduling, forms, automation, and payments.',
+    content: `${hero(
+      'Find the right software stack for your business.',
+      'Compare SaaS tools by use case, budget, and business type. Start with a guided finder, then review category pages and side-by-side comparisons.',
+      '<div class="hero-actions"><a class="primary" href="/tool-finder/">Open tool finder</a><a class="secondary" href="/tools/">Browse tools</a></div>',
+    )}
+    <section class="section">
+      <h2>Browse by category</h2>
+      ${grid(
+        categories.map(
+          (category) => `<a class="category-card" href="/categories/${category.slug}/">
+            <h3>${category.title}</h3>
+            <p>${category.description}</p>
+          </a>`,
+        ),
+      )}
+    </section>
+    <section class="section">
+      <h2>Popular comparisons</h2>
+      ${grid(
+        comparisons.map(
+          (comparison) => `<a class="category-card" href="/compare/${comparison.slug}/">
+            <h3>${comparison.title}</h3>
+            <p>Compare fit, strengths, and use cases before choosing.</p>
+          </a>`,
+        ),
+      )}
+    </section>`,
+  })
+
+const toolsPage = () =>
+  page({
+    path: '/tools/',
+    title: 'All SaaS Tools - ToolStackFinder',
+    description: 'Browse the ToolStackFinder software database by category and use case.',
+    content: `${hero('All SaaS tools', 'Browse the current software database for small business stacks.')}
+      <section class="section">${grid(tools.map(card))}</section>`,
+  })
+
+const finderPage = () =>
+  page({
+    path: '/tool-finder/',
+    title: 'SaaS Tool Finder - ToolStackFinder',
+    description:
+      'Use a guided software finder to shortlist SaaS tools by business type, category, and budget.',
+    content: `${hero('SaaS tool finder', 'Choose your category, budget, and business type to get a practical shortlist.')}
+      <section class="finder-app">
+        <label>Category<select id="category">${categories.map((category) => `<option value="${category.slug}">${category.title}</option>`).join('')}</select></label>
+        <label>Budget<select id="budget"><option value="free">Free or starter</option><option value="low">Low-cost</option><option value="medium">Medium</option><option value="high">Higher budget</option></select></label>
+        <label>Business type<select id="audience"><option value="freelancer">Freelancer</option><option value="small-business">Small business</option><option value="service">Service business</option><option value="creator">Creator</option><option value="marketer">Marketer</option></select></label>
+        <div id="results" class="grid"></div>
+      </section>
+      <script>
+        const tools = ${JSON.stringify(tools)};
+        const render = () => {
+          const category = document.querySelector('#category').value;
+          const budget = document.querySelector('#budget').value;
+          const audience = document.querySelector('#audience').value;
+          const matches = tools
+            .map((tool) => ({
+              ...tool,
+              score: (tool.category === category ? 2 : 0) + (tool.budget === budget ? 1 : 0) + (tool.audience.includes(audience) ? 1 : 0)
+            }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 6);
+          document.querySelector('#results').innerHTML = matches.map((tool) => \`
+            <article class="tool-card"><div><span>\${tool.category}</span><h3>\${tool.name}</h3><p>\${tool.description}</p></div><a href="\${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit website</a></article>
+          \`).join('');
+        };
+        document.querySelectorAll('select').forEach((select) => select.addEventListener('change', render));
+        render();
+      </script>`,
+  })
+
+const categoryPage = (category) => {
+  const categoryTools = tools.filter((tool) => tool.category === category.slug)
+  return page({
+    path: `/categories/${category.slug}/`,
+    title: `Best ${category.title} Tools for Small Business - ToolStackFinder`,
+    description: category.description,
+    content: `${hero(`${category.title} tools`, category.description)}
+      <section class="section">${grid(categoryTools.map(card))}</section>
+      <section class="content"><h2>How to choose</h2><p>Start with the workflow you need today, then compare price, integrations, ease of use, and whether the tool can grow with your business.</p></section>`,
+  })
+}
+
+const comparisonPage = (comparison) => {
+  const left = toolBySlug.get(comparison.left)
+  const right = toolBySlug.get(comparison.right)
+  return page({
+    path: `/compare/${comparison.slug}/`,
+    title: `${comparison.title} - ToolStackFinder`,
+    description: `Compare ${left.name} and ${right.name} for small business software stacks.`,
+    content: `${hero(comparison.title, `Compare ${left.name} and ${right.name} by use case, budget, and workflow fit.`)}
+      <section class="compare">
+        ${card(left)}
+        ${card(right)}
+      </section>
+      <section class="content"><h2>Recommendation</h2><p>Pick ${left.name} if its feature set better matches your current workflow. Pick ${right.name} if its pricing, channel mix, or team fit is stronger. Recheck pricing before buying because SaaS plans change often.</p></section>`,
+  })
+}
+
+const calculatorPage = () =>
+  page({
+    path: '/saas-cost-calculator/',
+    title: 'SaaS Cost Calculator - ToolStackFinder',
+    description:
+      'Estimate monthly and annual SaaS stack cost from tools, seats, and average subscription price.',
+    content: `${hero('SaaS cost calculator', 'Estimate how much a software stack costs per month and per year.')}
+      <section class="finder-app">
+        <label>Number of tools<input id="tools" type="number" value="6" min="0"></label>
+        <label>Average monthly price<input id="price" type="number" value="29" min="0"></label>
+        <label>Seats<input id="seats" type="number" value="2" min="1"></label>
+        <div class="result"><strong id="monthly">${money(348)}</strong><span>Estimated monthly cost</span></div>
+        <div class="result"><strong id="annual">${money(4176)}</strong><span>Estimated annual cost</span></div>
+      </section>
+      <script>
+        const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+        const calc = () => {
+          const total = Number(document.querySelector('#tools').value) * Number(document.querySelector('#price').value) * Number(document.querySelector('#seats').value);
+          document.querySelector('#monthly').textContent = money.format(total);
+          document.querySelector('#annual').textContent = money.format(total * 12);
+        };
+        document.querySelectorAll('input').forEach((input) => input.addEventListener('input', calc));
+        calc();
+      </script>`,
+  })
+
+const simplePage = ({ path, title, body }) =>
+  page({
+    path,
+    title: `${title} - ${site.name}`,
+    description: `${title} for ${site.name}.`,
+    content: `<section class="legal"><h1>${title}</h1>${body}</section>`,
+  })
+
+const styles = `:root{--ink:#171a1f;--muted:#667064;--line:#dddcd4;--wash:#f1efe7;--accent:#2f6f5e;--focus:#d4f48f;--font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}body{background:#fafaf8;color:var(--ink);font-family:var(--font);margin:0}.topbar{align-items:center;background:#fafaf8;border-bottom:1px solid var(--line);display:flex;gap:28px;justify-content:space-between;padding:18px clamp(18px,4vw,56px);position:sticky;top:0;z-index:10}.brand{align-items:center;color:var(--ink);display:flex;font-weight:850;gap:10px;text-decoration:none}.brand span{align-items:center;background:var(--ink);border-radius:6px;color:white;display:inline-flex;height:34px;justify-content:center;width:34px}.topbar nav,.footer nav{display:flex;flex-wrap:wrap;gap:16px}.topbar a,.footer a{color:var(--muted);font-weight:750;text-decoration:none}.hero{display:grid;gap:40px;grid-template-columns:minmax(0,1fr) 360px;padding:70px clamp(18px,4vw,56px) 44px}.hero h1{font-size:clamp(42px,6vw,76px);letter-spacing:0;line-height:.95;margin:0;max-width:880px}.hero p{color:var(--muted);font-size:18px;line-height:1.6;max-width:720px}.hero-actions{display:flex;gap:12px;margin-top:30px}.primary,.secondary,.tool-card a{border-radius:6px;display:inline-flex;font-weight:850;min-height:42px;padding:10px 14px;text-decoration:none}.primary,.tool-card a{background:var(--accent);color:white}.secondary{border:1px solid var(--line);color:var(--ink)}.finder-panel{background:var(--ink);border-radius:8px;color:white;display:flex;flex-direction:column;justify-content:flex-end;min-height:280px;padding:24px}.finder-panel span,.tool-card span{color:var(--muted);display:block;font-size:12px;font-weight:850;text-transform:uppercase}.finder-panel span{color:#dfe8d7}.finder-panel strong{font-size:28px;line-height:1.1}.section,.finder-app,.content,.legal{border-top:1px solid var(--line);padding:46px clamp(18px,4vw,56px)}.section h2{font-size:34px;margin:0 0 18px}.grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}.category-card,.tool-card,.content,.legal,.result{background:white;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:22px;text-decoration:none}.category-card h3,.tool-card h3{margin:0 0 10px}.category-card p,.tool-card p,.content p,.legal p,.legal li{color:var(--muted);line-height:1.6}.tool-card{display:flex;flex-direction:column;gap:14px;justify-content:space-between}.tool-card ul{color:var(--muted);line-height:1.55;margin:0;padding-left:18px}.finder-app{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}.finder-app .grid{grid-column:1/-1}label{color:var(--muted);display:grid;font-size:12px;font-weight:850;gap:8px;text-transform:uppercase}input,select{background:white;border:1px solid var(--line);border-radius:6px;color:var(--ink);font:700 14px/1.35 var(--font);min-height:42px;padding:0 12px;width:100%}.compare{border-top:1px solid var(--line);display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr));padding:46px clamp(18px,4vw,56px)}.result strong{display:block;font-size:32px}.result span{color:var(--muted)}.footer{background:var(--ink);color:white;display:flex;gap:24px;justify-content:space-between;padding:34px clamp(18px,4vw,56px)}.footer p{color:#c6cec4;margin:8px 0 0}@media(max-width:900px){.topbar,.footer{align-items:flex-start;flex-direction:column}.hero,.grid,.finder-app,.compare{grid-template-columns:1fr}.hero{padding-top:44px}}`
+
+const build = async () => {
+  routes.length = 0
+  await rm(outDir, { force: true, recursive: true })
+  await mkdir(outDir, { recursive: true })
+  await writeFile(join(outDir, 'styles.css'), styles)
+
+  await writePage('/', homePage())
+  await writePage('/tools/', toolsPage())
+  await writePage('/tool-finder/', finderPage())
+  await writePage('/saas-cost-calculator/', calculatorPage())
+  for (const category of categories) {
+    await writePage(`/categories/${category.slug}/`, categoryPage(category))
+  }
+  for (const comparison of comparisons) {
+    await writePage(`/compare/${comparison.slug}/`, comparisonPage(comparison))
+  }
+  await writePage(
+    '/affiliate-disclosure/',
+    simplePage({
+      path: '/affiliate-disclosure/',
+      title: 'Affiliate Disclosure',
+      body: '<p>ToolStackFinder may earn commissions when visitors click sponsored links or sign up for software through partner links. Recommendations should remain useful and transparent even when a partner relationship exists.</p><p>Pricing, features, and commissions can change. Always verify details on the software provider website before purchasing.</p>',
+    }),
+  )
+  await writePage(
+    '/privacy/',
+    simplePage({
+      path: '/privacy/',
+      title: 'Privacy Policy',
+      body: '<p>ToolStackFinder is designed as a public software research site. We may use analytics to understand page usage and may use affiliate links to track outbound partner clicks.</p><p>If you contact us, we use your email and message to respond to your request.</p>',
+    }),
+  )
+  await writePage(
+    '/terms/',
+    simplePage({
+      path: '/terms/',
+      title: 'Terms',
+      body: '<p>ToolStackFinder provides software research and comparison helpers for informational purposes. We do not guarantee that any tool is the best fit for every business.</p><p>You are responsible for reviewing pricing, contracts, data handling, and terms with each software provider before buying.</p>',
+    }),
+  )
+  await writePage(
+    '/contact/',
+    simplePage({
+      path: '/contact/',
+      title: 'Contact',
+      body: `<p>For corrections, partnership questions, or support, email <a href="mailto:${site.email}">${site.email}</a>.</p>`,
+    }),
+  )
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${routes
+  .map(
+    (route) => `  <url>
+    <loc>${site.domain}${route}</loc>
+  </url>`,
+  )
+  .join('\n')}
+</urlset>`
+
+  await writeFile(join(outDir, 'sitemap.xml'), sitemap)
+  await writeFile(
+    join(outDir, 'robots.txt'),
+    `User-agent: *
+Allow: /
+
+Sitemap: ${site.domain}/sitemap.xml
+`,
+  )
+  await writeFile(
+    join(outDir, '_redirects'),
+    `/* /index.html 200
+`,
+  )
+}
+
+await build()

@@ -1,0 +1,11 @@
+{
+  "name": "toolstackfinder",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node src/build.js",
+    "check": "node --check src/build.js && node --check src/data.js",
+    "dev": "node src/build.js --watch"
+  }
+}
