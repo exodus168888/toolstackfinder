@@ -34,6 +34,13 @@ const page = ({ content, description = site.description, path, title }) => {
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${canonical}" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${site.gaMeasurementId}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${site.gaMeasurementId}');
+    </script>
     <title>${escapeHtml(title)}</title>
   </head>
   <body>

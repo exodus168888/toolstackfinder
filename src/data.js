@@ -3,6 +3,7 @@ export const site = {
     'Find practical SaaS tools for email marketing, CRM, accounting, SEO, scheduling, forms, automation, and payments.',
   domain: 'https://toolstackfinder.com',
   email: 'support@toolstackfinder.com',
+  gaMeasurementId: 'G-M3NCT17B01',
   name: 'ToolStackFinder',
 }
 
