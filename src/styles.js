@@ -238,6 +238,29 @@ a {
   margin: 0 0 20px;
 }
 
+.section-heading {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  margin: 0;
+}
+
+.section-heading a {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
 .grid {
   display: grid;
   gap: 16px;
@@ -289,6 +312,24 @@ a {
   line-height: 1.55;
   margin: 0;
   padding-left: 18px;
+}
+
+.tool-meta {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.tool-meta strong {
+  font-size: 14px;
+}
+
+.tool-meta small {
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .finder-app {
@@ -394,6 +435,11 @@ select {
   .hero {
     min-height: auto;
     padding-top: 48px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 `

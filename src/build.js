@@ -44,6 +44,7 @@ const page = ({ content, description = site.description, path, title }) => {
         <a href="/tools/">Tools</a>
         <a href="/categories/email-marketing/">Categories</a>
         <a href="/compare/mailerlite-vs-brevo/">Compare</a>
+        <a href="/methodology/">Methodology</a>
         <a href="/affiliate-disclosure/">Disclosure</a>
       </nav>
     </header>
@@ -56,6 +57,7 @@ const page = ({ content, description = site.description, path, title }) => {
       <nav>
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
+        <a href="/methodology/">Methodology</a>
         <a href="/affiliate-disclosure/">Affiliate disclosure</a>
         <a href="/contact/">Contact</a>
       </nav>
@@ -69,6 +71,10 @@ const card = (tool) => `<article class="tool-card">
     <span>${categoryTitle(tool.category)}</span>
     <h3>${tool.name}</h3>
     <p>${tool.description}</p>
+  </div>
+  <div class="tool-meta">
+    <strong>${tool.price}</strong>
+    <small>Best for ${tool.audience.slice(0, 2).join(' and ')}</small>
   </div>
   <ul>${tool.features.map((feature) => `<li>${feature}</li>`).join('')}</ul>
   <a href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit website</a>
@@ -110,6 +116,17 @@ const homePage = () =>
       'Compare SaaS tools by use case, budget, and business type. Start with a guided finder, then review category pages and side-by-side comparisons.',
       '<div class="hero-actions"><a class="primary" href="/tool-finder/">Open tool finder</a><a class="secondary" href="/tools/">Browse tools</a></div>',
     )}
+    <section class="section">
+      <div class="section-heading">
+        <h2>How recommendations work</h2>
+        <a href="/methodology/">Read methodology</a>
+      </div>
+      ${grid([
+        '<article class="category-card"><h3>Use-case fit first</h3><p>Recommendations start with business type, workflow, budget, and category match instead of only commission potential.</p></article>',
+        '<article class="category-card"><h3>Transparent affiliate model</h3><p>Outbound software links may become affiliate links, but pages should stay useful even before affiliate approval.</p></article>',
+        '<article class="category-card"><h3>Review before buying</h3><p>Pricing and features change often, so users should verify details on the provider website before purchasing.</p></article>',
+      ])}
+    </section>
     <section class="section">
       <h2>Browse by category</h2>
       ${grid(
@@ -232,6 +249,36 @@ const calculatorPage = () =>
       </script>`,
   })
 
+const methodologyPage = () =>
+  page({
+    path: '/methodology/',
+    title: 'Recommendation Methodology - ToolStackFinder',
+    description:
+      'Learn how ToolStackFinder evaluates SaaS tools by use case, budget, business type, pricing, and workflow fit.',
+    content: `${hero(
+      'How ToolStackFinder recommends software.',
+      'We prioritize practical fit for freelancers and small businesses: use case, budget, ease of adoption, workflow match, and long-term flexibility.',
+    )}
+      <section class="content">
+        <h2>Evaluation factors</h2>
+        <ul>
+          <li><strong>Use-case fit:</strong> whether the tool solves a clear workflow problem for the category.</li>
+          <li><strong>Budget fit:</strong> whether the tool has a free, starter, low-cost, or higher-budget plan.</li>
+          <li><strong>Business type:</strong> whether the tool fits freelancers, service businesses, creators, ecommerce, marketers, or small teams.</li>
+          <li><strong>Adoption cost:</strong> how much setup, migration, and training the tool may require.</li>
+          <li><strong>Verification:</strong> users should confirm current pricing, terms, and features on the provider website before purchasing.</li>
+        </ul>
+      </section>
+      <section class="content">
+        <h2>Affiliate policy</h2>
+        <p>ToolStackFinder may earn commissions from software providers when visitors click sponsored links or sign up. Affiliate relationships should not be the only reason a tool appears on a page. We avoid claiming hands-on testing unless a tool has actually been tested.</p>
+      </section>
+      <section class="content">
+        <h2>Update process</h2>
+        <p>SaaS pricing and features change frequently. Pages should be refreshed as programs approve affiliate links, tools change plans, or better options become available.</p>
+      </section>`,
+  })
+
 const simplePage = ({ path, title, body }) =>
   page({
     path,
@@ -252,6 +299,7 @@ const build = async () => {
   await writePage('/tools/', toolsPage())
   await writePage('/tool-finder/', finderPage())
   await writePage('/saas-cost-calculator/', calculatorPage())
+  await writePage('/methodology/', methodologyPage())
   for (const category of categories) {
     await writePage(`/categories/${category.slug}/`, categoryPage(category))
   }
