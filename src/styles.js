@@ -314,6 +314,57 @@ a {
   padding-left: 18px;
 }
 
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tool-card a.secondary-action {
+  background: white;
+  border: 1px solid var(--line);
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.content-blocks {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 48px clamp(18px, 4vw, 56px);
+}
+
+.content ul,
+.content ol {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 16px 0 0;
+  padding-left: 20px;
+}
+
+.mini-link-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.mini-link-grid a {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  text-decoration: none;
+}
+
+.mini-link-grid span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .tool-meta {
   background: var(--surface-strong);
   border: 1px solid var(--line);
@@ -428,7 +479,8 @@ select {
   .hero,
   .grid,
   .finder-app,
-  .compare {
+  .compare,
+  .content-blocks {
     grid-template-columns: 1fr;
   }
 

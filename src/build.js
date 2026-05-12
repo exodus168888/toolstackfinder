@@ -84,7 +84,10 @@ const card = (tool) => `<article class="tool-card">
     <small>Best for ${tool.audience.slice(0, 2).join(' and ')}</small>
   </div>
   <ul>${tool.features.map((feature) => `<li>${feature}</li>`).join('')}</ul>
-  <a href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit website</a>
+  <div class="card-actions">
+    <a href="/tools/${tool.slug}/">Read review</a>
+    <a class="secondary-action" href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit website</a>
+  </div>
 </article>`
 
 const categoryTitle = (slug) =>
@@ -104,6 +107,25 @@ const hero = (title, description, action = '') => `<section class="hero">
 </section>`
 
 const grid = (items) => `<div class="grid">${items.join('')}</div>`
+
+const toolSummary = (tool) =>
+  `${tool.name} is a ${categoryTitle(tool.category).toLowerCase()} tool for ${tool.audience.join(', ')} workflows. It is most useful when a small team needs ${tool.features.join(', ')} without building a custom system.`
+
+const bestForLine = (tool) =>
+  `${tool.name} is best for ${tool.audience.slice(0, 3).join(', ')} users who want ${tool.features.slice(0, 2).join(' and ')}.`
+
+const categoryAdvice = (category) => {
+  const categoryTools = tools.filter((tool) => tool.category === category.slug)
+  const freeTools = categoryTools.filter((tool) => tool.budget === 'free')
+  return {
+    freeTools,
+    text:
+      freeTools.length > 0
+        ? `Start with ${freeTools.map((tool) => tool.name).join(' or ')} if you want a lower-risk test before committing to paid software.`
+        : `Start with the tool that matches your workflow most closely, then confirm pricing and limits on the provider website.`,
+    tools: categoryTools,
+  }
+}
 
 const writePage = async (path, html) => {
   const file = path === '/' ? 'index.html' : `${path.replace(/^\/|\/$/g, '')}/index.html`
@@ -167,6 +189,66 @@ const toolsPage = () =>
       <section class="section">${grid(tools.map(card))}</section>`,
   })
 
+const toolPage = (tool) => {
+  const peers = tools
+    .filter((item) => item.category === tool.category && item.slug !== tool.slug)
+    .slice(0, 4)
+
+  return page({
+    path: `/tools/${tool.slug}/`,
+    title: `${tool.name} Review for Small Business - ToolStackFinder`,
+    description: `${tool.name} review for small business teams comparing ${categoryTitle(tool.category).toLowerCase()} tools, pricing fit, use cases, alternatives, and adoption notes.`,
+    content: `${hero(
+      `${tool.name} review`,
+      `${tool.name} is listed in the ${categoryTitle(tool.category)} category. This review summarizes where it fits, who should consider it, and what to verify before buying.`,
+      `<div class="hero-actions"><a class="primary" href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit ${tool.name}</a><a class="secondary" href="/categories/${tool.category}/">Compare ${categoryTitle(tool.category)}</a></div>`,
+    )}
+      <section class="content-blocks">
+        <article class="content">
+          <h2>Quick fit</h2>
+          <p>${toolSummary(tool)}</p>
+          <ul>
+            <li><strong>Category:</strong> ${categoryTitle(tool.category)}</li>
+            <li><strong>Pricing signal:</strong> ${tool.price}</li>
+            <li><strong>Best for:</strong> ${tool.audience.join(', ')}</li>
+            <li><strong>Core features:</strong> ${tool.features.join(', ')}</li>
+          </ul>
+        </article>
+        <article class="content">
+          <h2>Best use cases</h2>
+          <p>${bestForLine(tool)}</p>
+          <ul>
+            <li>Shortlisting software before a small business commits to a stack.</li>
+            <li>Comparing tool fit against budget, team size, and workflow complexity.</li>
+            <li>Checking whether a category-specific tool can replace manual spreadsheets or disconnected apps.</li>
+          </ul>
+        </article>
+        <article class="content">
+          <h2>What to verify</h2>
+          <p>Pricing, plan limits, support levels, integrations, and data handling can change. Verify the current plan page and terms on the provider website before purchasing.</p>
+          <ul>
+            <li>Free plan limits or trial restrictions</li>
+            <li>Monthly versus annual pricing</li>
+            <li>Export, automation, user, or usage limits</li>
+            <li>Cancellation, data export, and support policies</li>
+          </ul>
+        </article>
+        <article class="content">
+          <h2>Alternatives</h2>
+          <p>Compare ${tool.name} with similar tools in the same category before deciding.</p>
+          <div class="mini-link-grid">
+            ${peers
+              .map(
+                (peer) =>
+                  `<a href="/tools/${peer.slug}/"><strong>${peer.name}</strong><span>${peer.description}</span></a>`,
+              )
+              .join('') || '<p>No direct alternatives are listed in this category yet.</p>'}
+          </div>
+        </article>
+      </section>`,
+  })
+}
+
 const finderPage = () =>
   page({
     path: '/tool-finder/',
@@ -203,20 +285,46 @@ const finderPage = () =>
   })
 
 const categoryPage = (category) => {
-  const categoryTools = tools.filter((tool) => tool.category === category.slug)
+  const advice = categoryAdvice(category)
   return page({
     path: `/categories/${category.slug}/`,
     title: `Best ${category.title} Tools for Small Business - ToolStackFinder`,
     description: category.description,
     content: `${hero(`${category.title} tools`, category.description)}
-      <section class="section">${grid(categoryTools.map(card))}</section>
-      <section class="content"><h2>How to choose</h2><p>Start with the workflow you need today, then compare price, integrations, ease of use, and whether the tool can grow with your business.</p></section>`,
+      <section class="section">${grid(advice.tools.map(card))}</section>
+      <section class="content-blocks">
+        <article class="content">
+          <h2>How to choose ${category.title.toLowerCase()} software</h2>
+          <p>Start with the workflow you need today, then compare price, integrations, ease of use, and whether the tool can grow with your business.</p>
+          <ul>
+            <li>Write down the exact workflow you want to improve.</li>
+            <li>Check whether the tool supports your team size and budget.</li>
+            <li>Confirm integrations with the apps you already use.</li>
+            <li>Test export options before storing important business data.</li>
+          </ul>
+        </article>
+        <article class="content">
+          <h2>Starter recommendation</h2>
+          <p>${advice.text}</p>
+          <p>For a small business, the best tool is usually the one your team will actually use every week, not the one with the longest feature list.</p>
+        </article>
+        <article class="content">
+          <h2>Common mistakes</h2>
+          <ul>
+            <li>Buying a higher plan before confirming real usage.</li>
+            <li>Ignoring migration effort and staff training time.</li>
+            <li>Choosing a tool without checking mobile, export, and support limits.</li>
+            <li>Adding overlapping software that creates duplicate records.</li>
+          </ul>
+        </article>
+      </section>`,
   })
 }
 
 const comparisonPage = (comparison) => {
   const left = toolBySlug.get(comparison.left)
   const right = toolBySlug.get(comparison.right)
+  const sharedCategory = left.category === right.category ? categoryTitle(left.category) : 'SaaS'
   return page({
     path: `/compare/${comparison.slug}/`,
     title: `${comparison.title} - ToolStackFinder`,
@@ -226,7 +334,32 @@ const comparisonPage = (comparison) => {
         ${card(left)}
         ${card(right)}
       </section>
-      <section class="content"><h2>Recommendation</h2><p>Pick ${left.name} if its feature set better matches your current workflow. Pick ${right.name} if its pricing, channel mix, or team fit is stronger. Recheck pricing before buying because SaaS plans change often.</p></section>`,
+      <section class="content-blocks">
+        <article class="content">
+          <h2>Quick recommendation</h2>
+          <p>Pick ${left.name} if ${left.features.slice(0, 2).join(' and ')} are the most important parts of your ${sharedCategory.toLowerCase()} workflow. Pick ${right.name} if ${right.features.slice(0, 2).join(' and ')} match your day-to-day work better.</p>
+        </article>
+        <article class="content">
+          <h2>Best for</h2>
+          <ul>
+            <li><strong>${left.name}:</strong> ${bestForLine(left)}</li>
+            <li><strong>${right.name}:</strong> ${bestForLine(right)}</li>
+          </ul>
+        </article>
+        <article class="content">
+          <h2>Pricing notes</h2>
+          <p>${left.name}: ${left.price}. ${right.name}: ${right.price}. Always recheck the provider websites because SaaS pricing, plan limits, and included features change often.</p>
+        </article>
+        <article class="content">
+          <h2>Decision checklist</h2>
+          <ul>
+            <li>Does it solve the workflow you need this month?</li>
+            <li>Can your team adopt it without long setup work?</li>
+            <li>Does the starter plan have the features you actually need?</li>
+            <li>Can you export your data if you switch later?</li>
+          </ul>
+        </article>
+      </section>`,
   })
 }
 
@@ -304,6 +437,9 @@ const build = async () => {
 
   await writePage('/', homePage())
   await writePage('/tools/', toolsPage())
+  for (const tool of tools) {
+    await writePage(`/tools/${tool.slug}/`, toolPage(tool))
+  }
   await writePage('/tool-finder/', finderPage())
   await writePage('/saas-cost-calculator/', calculatorPage())
   await writePage('/methodology/', methodologyPage())
@@ -364,6 +500,11 @@ ${routes
 Allow: /
 
 Sitemap: ${site.domain}/sitemap.xml
+`,
+  )
+  await writeFile(
+    join(outDir, 'ads.txt'),
+    `google.com, pub-8034493444478789, DIRECT, f08c47fec0942fa0
 `,
   )
   await writeFile(
