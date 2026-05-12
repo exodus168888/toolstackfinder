@@ -7,6 +7,13 @@ export const site = {
   name: 'ToolStackFinder',
 }
 
+export const leadMagnet = {
+  description:
+    'Get a one-page checklist for choosing CRM, forms, scheduling, email, payments, automation, accounting, and SEO tools without overspending.',
+  formAction: 'https://toolstackfinder.com/contact/',
+  title: 'Free Small Business SaaS Stack Checklist',
+}
+
 export const tools = [
   {
     audience: ['freelancer', 'consultant', 'service'],
@@ -211,6 +218,105 @@ export const tools = [
     price: 'Usage-based fees',
     slug: 'paypal',
     url: 'https://www.paypal.com/business',
+  },
+]
+
+export const stackPages = [
+  {
+    audience: 'solo freelancers and consultants',
+    budget: 'Start free, then pay only for invoicing, scheduling, or email features that save time every week.',
+    painPoints: [
+      'Too many admin tasks between proposals, invoices, client calls, and follow-ups.',
+      'No clear system for capturing leads and turning them into paid work.',
+      'Software costs that grow faster than revenue.',
+    ],
+    primaryTools: ['tally', 'calendly', 'mailerlite', 'freshbooks', 'paypal', 'zapier'],
+    slug: 'freelancer',
+    title: 'Best SaaS stack for freelancers',
+  },
+  {
+    audience: 'consultants, coaches, and advisory businesses',
+    budget: 'Prioritize scheduling, CRM, intake forms, and email follow-up before buying advanced automation.',
+    painPoints: [
+      'Leads arrive from referrals, calls, and forms but are hard to track consistently.',
+      'Discovery calls and paid sessions need smoother booking.',
+      'Follow-up depends too much on manual reminders.',
+    ],
+    primaryTools: ['hubspot', 'calendly', 'jotform', 'mailerlite', 'stripe', 'make'],
+    slug: 'consultant',
+    title: 'Best SaaS stack for consultants',
+  },
+  {
+    audience: 'small agencies and creative service teams',
+    budget: 'Expect to pay for CRM, email, forms, automation, and accounting once the team handles multiple clients.',
+    painPoints: [
+      'Client intake, proposals, delivery, and invoicing live in separate tools.',
+      'Sales follow-up becomes inconsistent as project volume grows.',
+      'Team members need shared visibility into pipeline and client status.',
+    ],
+    primaryTools: ['pipedrive', 'jotform', 'mailerlite', 'freshbooks', 'stripe', 'zapier'],
+    slug: 'agency',
+    title: 'Best SaaS stack for agencies',
+  },
+  {
+    audience: 'restaurants, cafes, commissaries, and food service operators',
+    budget: 'Keep the stack lean: forms for requests, payments for deposits, email for promos, and automation for reminders.',
+    painPoints: [
+      'Event inquiries, catering requests, and customer complaints arrive through scattered channels.',
+      'Manual follow-up causes missed bookings or delayed responses.',
+      'Owners need lightweight tools without a full enterprise system.',
+    ],
+    primaryTools: ['jotform', 'stripe', 'mailerlite', 'hubspot', 'make', 'quickbooks'],
+    slug: 'restaurant',
+    title: 'Best SaaS stack for restaurants',
+  },
+  {
+    audience: 'online sellers and ecommerce operators',
+    budget: 'Spend first on email, payments, automation, and accounting before adding advanced SEO or CRM.',
+    painPoints: [
+      'Customer data, email promotions, payments, and bookkeeping are disconnected.',
+      'Manual order follow-up and refund handling take too much time.',
+      'Marketing decisions need better customer and revenue visibility.',
+    ],
+    primaryTools: ['brevo', 'stripe', 'quickbooks', 'make', 'hubspot', 'se-ranking'],
+    slug: 'ecommerce',
+    title: 'Best SaaS stack for ecommerce',
+  },
+  {
+    audience: 'online coaches, course creators, and experts',
+    budget: 'Start with scheduling, forms, email, and payment tools; add automation when lead flow becomes consistent.',
+    painPoints: [
+      'Leads need to book calls, fill intake forms, and receive nurture emails.',
+      'Payments and onboarding need to feel professional.',
+      'Manual reminders reduce time available for coaching or content creation.',
+    ],
+    primaryTools: ['tally', 'calendly', 'kit', 'stripe', 'zapier', 'freshbooks'],
+    slug: 'coach',
+    title: 'Best SaaS stack for coaches',
+  },
+  {
+    audience: 'virtual assistants and remote admin service providers',
+    budget: 'Use free or low-cost tools until client volume justifies paid CRM and automation.',
+    painPoints: [
+      'Client requests need structure without adding heavy project management software.',
+      'Scheduling, forms, billing, and follow-up must be repeatable.',
+      'The business needs a professional system that remains easy to operate alone.',
+    ],
+    primaryTools: ['tally', 'tidycal', 'mailerlite', 'paypal', 'make', 'freshbooks'],
+    slug: 'virtual-assistant',
+    title: 'Best SaaS stack for virtual assistants',
+  },
+  {
+    audience: 'importers, exporters, distributors, and product sourcing teams',
+    budget: 'Prioritize forms, CRM, automation, accounting, and payments before adding more marketing tools.',
+    painPoints: [
+      'Supplier details, buyer inquiries, quotes, and payment records are spread across email and spreadsheets.',
+      'Follow-up with suppliers and customers is easy to miss.',
+      'A lightweight system is needed before investing in ERP.',
+    ],
+    primaryTools: ['jotform', 'hubspot', 'quickbooks', 'stripe', 'make', 'brevo'],
+    slug: 'import-export-business',
+    title: 'Best SaaS stack for import export businesses',
   },
 ]
 

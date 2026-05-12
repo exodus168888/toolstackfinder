@@ -1,6 +1,13 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { categories, comparisons, site, tools } from './data.js'
+import {
+  categories,
+  comparisons,
+  leadMagnet,
+  site,
+  stackPages,
+  tools,
+} from './data.js'
 import { premiumStyles } from './styles.js'
 
 const outDir = 'dist'
@@ -19,7 +26,21 @@ const money = (value) =>
     value,
   )
 
-const page = ({ content, description = site.description, path, title }) => {
+const jsonLd = (items) =>
+  items
+    .filter(Boolean)
+    .map(
+      (item) => `<script type="application/ld+json">${JSON.stringify(item).replaceAll('</', '<\\/')}</script>`,
+    )
+    .join('\n    ')
+
+const page = ({
+  content,
+  description = site.description,
+  path,
+  schema = [],
+  title,
+}) => {
   const canonical = `${site.domain}${path}`
   routes.push(path)
   return `<!doctype html>
@@ -34,6 +55,17 @@ const page = ({ content, description = site.description, path, title }) => {
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${canonical}" />
+    ${jsonLd([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        description,
+        name: title,
+        url: canonical,
+      },
+      breadcrumbSchema(path, title),
+      ...schema,
+    ])}
     <script async src="https://www.googletagmanager.com/gtag/js?id=${site.gaMeasurementId}"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -49,6 +81,7 @@ const page = ({ content, description = site.description, path, title }) => {
       <nav>
         <a href="/tool-finder/">Finder</a>
         <a href="/tools/">Tools</a>
+        <a href="/stacks/freelancer/">Stacks</a>
         <a href="/categories/email-marketing/">Categories</a>
         <a href="/compare/mailerlite-vs-brevo/">Compare</a>
         <a href="/methodology/">Methodology</a>
@@ -73,6 +106,33 @@ const page = ({ content, description = site.description, path, title }) => {
 </html>`
 }
 
+const breadcrumbSchema = (path, title) => {
+  const parts = path.split('/').filter(Boolean)
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        item: site.domain,
+        name: 'Home',
+        position: 1,
+      },
+      ...parts.map((part, index) => ({
+        '@type': 'ListItem',
+        item: `${site.domain}/${parts.slice(0, index + 1).join('/')}/`,
+        name:
+          index === parts.length - 1
+            ? title.replace(` - ${site.name}`, '')
+            : part.replaceAll('-', ' '),
+        position: index + 2,
+      })),
+    ],
+  }
+}
+
+const outboundUrl = (tool) => tool.affiliateUrl ?? tool.url
+
 const card = (tool) => `<article class="tool-card">
   <div>
     <span>${categoryTitle(tool.category)}</span>
@@ -86,7 +146,7 @@ const card = (tool) => `<article class="tool-card">
   <ul>${tool.features.map((feature) => `<li>${feature}</li>`).join('')}</ul>
   <div class="card-actions">
     <a href="/tools/${tool.slug}/">Read review</a>
-    <a class="secondary-action" href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit website</a>
+    <a class="secondary-action" href="${outboundUrl(tool)}" rel="sponsored nofollow noopener" target="_blank">Visit website</a>
   </div>
 </article>`
 
@@ -107,6 +167,45 @@ const hero = (title, description, action = '') => `<section class="hero">
 </section>`
 
 const grid = (items) => `<div class="grid">${items.join('')}</div>`
+
+const emailCta = () => `<section class="email-cta">
+  <div>
+    <span>Free checklist</span>
+    <h2>${leadMagnet.title}</h2>
+    <p>${leadMagnet.description}</p>
+  </div>
+  <form action="${leadMagnet.formAction}" method="get">
+    <label>Email<input name="email" type="email" placeholder="you@example.com"></label>
+    <button type="submit">Get the checklist</button>
+  </form>
+</section>`
+
+const faqSection = (faqs) => `<section class="faq-section">
+  <h2>Frequently asked questions</h2>
+  <div class="faq-grid">
+    ${faqs
+      .map(
+        ([question, answer]) => `<details>
+          <summary>${question}</summary>
+          <p>${answer}</p>
+        </details>`,
+      )
+      .join('')}
+  </div>
+</section>`
+
+const faqSchema = (faqs) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(([question, answer]) => ({
+    '@type': 'Question',
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: answer,
+    },
+    name: question,
+  })),
+})
 
 const toolSummary = (tool) =>
   `${tool.name} is a ${categoryTitle(tool.category).toLowerCase()} tool for ${tool.audience.join(', ')} workflows. It is most useful when a small team needs ${tool.features.join(', ')} without building a custom system.`
@@ -177,7 +276,19 @@ const homePage = () =>
           </a>`,
         ),
       )}
-    </section>`,
+    </section>
+    <section class="section">
+      <h2>Popular business stacks</h2>
+      ${grid(
+        stackPages.slice(0, 6).map(
+          (stack) => `<a class="category-card" href="/stacks/${stack.slug}/">
+            <h3>${stack.title}</h3>
+            <p>Recommended tools for ${stack.audience}.</p>
+          </a>`,
+        ),
+      )}
+    </section>
+    ${emailCta()}`,
   })
 
 const toolsPage = () =>
@@ -193,15 +304,51 @@ const toolPage = (tool) => {
   const peers = tools
     .filter((item) => item.category === tool.category && item.slug !== tool.slug)
     .slice(0, 4)
+  const faqs = [
+    [
+      `Is ${tool.name} good for small businesses?`,
+      `${tool.name} can be a good fit for small businesses when its ${tool.features.slice(0, 2).join(' and ')} features match the workflow you need now.`,
+    ],
+    [
+      `What is ${tool.name} best for?`,
+      bestForLine(tool),
+    ],
+    [
+      `Does ${tool.name} have affiliate or sponsored links here?`,
+      'Outbound provider links may be sponsored or affiliate links. Recommendations should still be checked against your own budget, workflow, and provider terms.',
+    ],
+    [
+      `What should I verify before choosing ${tool.name}?`,
+      'Verify current pricing, plan limits, data export options, support, integrations, and cancellation terms on the provider website.',
+    ],
+  ]
 
   return page({
     path: `/tools/${tool.slug}/`,
     title: `${tool.name} Review for Small Business - ToolStackFinder`,
     description: `${tool.name} review for small business teams comparing ${categoryTitle(tool.category).toLowerCase()} tools, pricing fit, use cases, alternatives, and adoption notes.`,
+    schema: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        applicationCategory: categoryTitle(tool.category),
+        description: tool.description,
+        name: tool.name,
+        offers: {
+          '@type': 'Offer',
+          price: tool.price,
+          priceCurrency: 'USD',
+          url: outboundUrl(tool),
+        },
+        operatingSystem: 'Web',
+        url: outboundUrl(tool),
+      },
+      faqSchema(faqs),
+    ],
     content: `${hero(
       `${tool.name} review`,
       `${tool.name} is listed in the ${categoryTitle(tool.category)} category. This review summarizes where it fits, who should consider it, and what to verify before buying.`,
-      `<div class="hero-actions"><a class="primary" href="${tool.url}" rel="sponsored nofollow noopener" target="_blank">Visit ${tool.name}</a><a class="secondary" href="/categories/${tool.category}/">Compare ${categoryTitle(tool.category)}</a></div>`,
+      `<div class="hero-actions"><a class="primary" href="${outboundUrl(tool)}" rel="sponsored nofollow noopener" target="_blank">Visit ${tool.name}</a><a class="secondary" href="/categories/${tool.category}/">Compare ${categoryTitle(tool.category)}</a></div>`,
     )}
       <section class="content-blocks">
         <article class="content">
@@ -245,7 +392,9 @@ const toolPage = (tool) => {
               .join('') || '<p>No direct alternatives are listed in this category yet.</p>'}
           </div>
         </article>
-      </section>`,
+      </section>
+      ${faqSection(faqs)}
+      ${emailCta()}`,
   })
 }
 
@@ -286,10 +435,25 @@ const finderPage = () =>
 
 const categoryPage = (category) => {
   const advice = categoryAdvice(category)
+  const faqs = [
+    [
+      `What is the best ${category.title.toLowerCase()} tool for small business?`,
+      `The best ${category.title.toLowerCase()} tool depends on your workflow, budget, and team size. Start with the tools listed here, then test the one that matches your current process most closely.`,
+    ],
+    [
+      `Should I choose a free ${category.title.toLowerCase()} tool first?`,
+      'A free or starter plan is useful when you are still validating a workflow. Upgrade only when usage, limits, or collaboration needs justify the cost.',
+    ],
+    [
+      `How should I compare ${category.title.toLowerCase()} software?`,
+      'Compare setup time, integrations, export options, pricing limits, support, and whether the tool removes a real recurring task.',
+    ],
+  ]
   return page({
     path: `/categories/${category.slug}/`,
     title: `Best ${category.title} Tools for Small Business - ToolStackFinder`,
     description: category.description,
+    schema: [faqSchema(faqs)],
     content: `${hero(`${category.title} tools`, category.description)}
       <section class="section">${grid(advice.tools.map(card))}</section>
       <section class="content-blocks">
@@ -317,7 +481,9 @@ const categoryPage = (category) => {
             <li>Adding overlapping software that creates duplicate records.</li>
           </ul>
         </article>
-      </section>`,
+      </section>
+      ${faqSection(faqs)}
+      ${emailCta()}`,
   })
 }
 
@@ -325,14 +491,48 @@ const comparisonPage = (comparison) => {
   const left = toolBySlug.get(comparison.left)
   const right = toolBySlug.get(comparison.right)
   const sharedCategory = left.category === right.category ? categoryTitle(left.category) : 'SaaS'
+  const rows = [
+    ['Best for', left.audience.slice(0, 3).join(', '), right.audience.slice(0, 3).join(', ')],
+    ['Pricing signal', left.price, right.price],
+    ['Core features', left.features.join(', '), right.features.join(', ')],
+    ['Budget fit', left.budget, right.budget],
+    ['Category', categoryTitle(left.category), categoryTitle(right.category)],
+  ]
+  const faqs = [
+    [
+      `Which is better, ${left.name} or ${right.name}?`,
+      `Choose ${left.name} if its ${left.features.slice(0, 2).join(' and ')} features match your workflow better. Choose ${right.name} if its ${right.features.slice(0, 2).join(' and ')} features are a closer fit.`,
+    ],
+    [
+      `Is ${left.name} cheaper than ${right.name}?`,
+      `${left.name} is listed as "${left.price}" and ${right.name} is listed as "${right.price}". Recheck both provider websites because pricing changes often.`,
+    ],
+    [
+      `Can I switch from ${left.name} to ${right.name} later?`,
+      'Usually yes, but you should confirm export options, data formats, integrations, and cancellation policies before committing.',
+    ],
+  ]
   return page({
     path: `/compare/${comparison.slug}/`,
     title: `${comparison.title} - ToolStackFinder`,
     description: `Compare ${left.name} and ${right.name} for small business software stacks.`,
+    schema: [faqSchema(faqs)],
     content: `${hero(comparison.title, `Compare ${left.name} and ${right.name} by use case, budget, and workflow fit.`)}
       <section class="compare">
         ${card(left)}
         ${card(right)}
+      </section>
+      <section class="table-section">
+        <h2>${comparison.title} comparison table</h2>
+        <table>
+          <thead><tr><th>Factor</th><th>${left.name}</th><th>${right.name}</th></tr></thead>
+          <tbody>${rows
+            .map(
+              ([factor, leftValue, rightValue]) =>
+                `<tr><td>${factor}</td><td>${leftValue}</td><td>${rightValue}</td></tr>`,
+            )
+            .join('')}</tbody>
+        </table>
       </section>
       <section class="content-blocks">
         <article class="content">
@@ -359,7 +559,70 @@ const comparisonPage = (comparison) => {
             <li>Can you export your data if you switch later?</li>
           </ul>
         </article>
-      </section>`,
+      </section>
+      ${faqSection(faqs)}
+      ${emailCta()}`,
+  })
+}
+
+const stackPage = (stack) => {
+  const selectedTools = stack.primaryTools
+    .map((slug) => toolBySlug.get(slug))
+    .filter(Boolean)
+  const faqs = [
+    [
+      `What is the best SaaS stack for ${stack.audience}?`,
+      `A good stack for ${stack.audience} should cover lead capture, follow-up, payments, admin, and reporting without creating too many overlapping subscriptions.`,
+    ],
+    [
+      'Should I buy every tool at once?',
+      'No. Start with the workflow that is costing the most time or money, then add tools only when the business process is proven.',
+    ],
+    [
+      'How do I keep SaaS costs under control?',
+      'Review subscriptions quarterly, remove overlapping tools, choose annual plans only after testing, and track whether each tool saves time or generates revenue.',
+    ],
+  ]
+
+  return page({
+    path: `/stacks/${stack.slug}/`,
+    title: `${stack.title} - ToolStackFinder`,
+    description: `${stack.title} with recommended CRM, forms, scheduling, payments, email, accounting, and automation tools for ${stack.audience}.`,
+    schema: [faqSchema(faqs)],
+    content: `${hero(
+      stack.title,
+      `A practical software stack for ${stack.audience}. Start lean, solve the most painful workflow first, and only upgrade when the tool earns its place.`,
+      `<div class="hero-actions"><a class="primary" href="/tool-finder/">Use the finder</a><a class="secondary" href="/saas-cost-calculator/">Estimate stack cost</a></div>`,
+    )}
+      <section class="content-blocks">
+        <article class="content">
+          <h2>Main problems this stack solves</h2>
+          <ul>${stack.painPoints.map((point) => `<li>${point}</li>`).join('')}</ul>
+        </article>
+        <article class="content">
+          <h2>Budget guidance</h2>
+          <p>${stack.budget}</p>
+          <p>Use the SaaS cost calculator before committing to several paid plans at once.</p>
+        </article>
+      </section>
+      <section class="section">
+        <h2>Recommended tools</h2>
+        ${grid(selectedTools.map(card))}
+      </section>
+      <section class="table-section">
+        <h2>Suggested stack map</h2>
+        <table>
+          <thead><tr><th>Workflow</th><th>Recommended tool</th><th>Why it fits</th></tr></thead>
+          <tbody>${selectedTools
+            .map(
+              (tool) =>
+                `<tr><td>${categoryTitle(tool.category)}</td><td><a href="/tools/${tool.slug}/">${tool.name}</a></td><td>${tool.description}</td></tr>`,
+            )
+            .join('')}</tbody>
+        </table>
+      </section>
+      ${faqSection(faqs)}
+      ${emailCta()}`,
   })
 }
 
@@ -443,6 +706,9 @@ const build = async () => {
   await writePage('/tool-finder/', finderPage())
   await writePage('/saas-cost-calculator/', calculatorPage())
   await writePage('/methodology/', methodologyPage())
+  for (const stack of stackPages) {
+    await writePage(`/stacks/${stack.slug}/`, stackPage(stack))
+  }
   for (const category of categories) {
     await writePage(`/categories/${category.slug}/`, categoryPage(category))
   }

@@ -335,6 +335,129 @@ a {
   padding: 48px clamp(18px, 4vw, 56px);
 }
 
+.table-section,
+.faq-section,
+.email-cta {
+  border-top: 1px solid var(--line);
+  padding: 48px clamp(18px, 4vw, 56px);
+}
+
+.table-section h2,
+.faq-section h2,
+.email-cta h2 {
+  font-size: 34px;
+  line-height: 1.05;
+  margin: 0 0 20px;
+}
+
+.table-section table {
+  background: white;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(16, 20, 24, 0.04);
+  overflow: hidden;
+  width: 100%;
+}
+
+.table-section th,
+.table-section td {
+  border-bottom: 1px solid var(--line);
+  line-height: 1.55;
+  padding: 15px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table-section th {
+  background: var(--surface-strong);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.table-section td {
+  color: var(--muted);
+}
+
+.table-section a {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.faq-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.faq-grid details {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.faq-grid summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.faq-grid p {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 12px 0 0;
+}
+
+.email-cta {
+  align-items: end;
+  background: #101418;
+  color: white;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+}
+
+.email-cta span {
+  color: var(--lime);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.email-cta h2 {
+  color: white;
+  margin-bottom: 12px;
+}
+
+.email-cta p {
+  color: #c6cec4;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 760px;
+}
+
+.email-cta form {
+  display: grid;
+  gap: 12px;
+}
+
+.email-cta label {
+  color: #c6cec4;
+}
+
+.email-cta button {
+  background: var(--lime);
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font: 900 15px/1 var(--font);
+  min-height: 46px;
+  padding: 0 16px;
+}
+
 .content ul,
 .content ol {
   color: var(--muted);
@@ -480,8 +603,14 @@ select {
   .grid,
   .finder-app,
   .compare,
-  .content-blocks {
+  .content-blocks,
+  .faq-grid,
+  .email-cta {
     grid-template-columns: 1fr;
+  }
+
+  .table-section {
+    overflow-x: auto;
   }
 
   .hero {
